@@ -1,0 +1,59 @@
+# .gitignore for Keil MDK (ARM Compiler)
+
+# --- 编译输出文件 ---
+*.o
+*.obj
+*.lib
+*.a
+*.d
+*.crf
+*.depend
+*.axf
+*.elf
+*.bin
+*.hex
+*.lst
+*.map
+*.iex
+*.htm
+*.build_log.htm
+*.lnp
+*.sct
+*.dep
+*.flash
+
+
+# --- Keil 工程特定输出文件夹 ---
+# 如果你习惯把输出放到特定文件夹（如 Objects, Listings），直接忽略整个文件夹最省事
+Objects/
+Listings/
+# 如果你的中间文件放在了如 DebugConfig、RTE 等文件夹，也建议一起忽略
+DebugConfig/
+RTE/
+
+# --- 调试与编辑器临时文件 ---
+*.uvguix.*          # 多工程工作空间里的用户布局文件
+*.uvoptx            # 工程选项（用户本地配置）
+JLinkLog.txt
+JLinkSettings.ini
+
+# --- IDE 与编辑器无关文件 ---
+*.bak
+*.dep
+*.orig
+*.swp
+*~
+.DS_Store
+Thumbs.db
+/.vscode/
+/.idea/
+
+# --- 操作系统无关文件 ---
+# Windows 下的缩略图文件
+Thumbs.db
+# Mac 文件夹属性文件
+.DS_Store
+
+# --- 其他建议 ---
+# 如果你有本地私有的调试脚本或笔记，也可以用这种方式忽略
+# Private/
