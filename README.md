@@ -116,4 +116,4 @@ OLED_ShowString_F8X16(1, 2, (uint8_t*)"Hello");
 
 - **刘礼鑫**
 - 日期：2026 年 5 月
-- GitHub：[你的仓库链接]
+- GitHub：[https://github.com/2684592530llx/Project_DHT11_OLED.git]
