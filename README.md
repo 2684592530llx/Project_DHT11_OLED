@@ -1,5 +1,7 @@
 # 基于 STM32 的 DHT11 温湿度采集与 OLED 显示系统
 
+<img width="1440" height="1920" alt="c57b17eac51fc2fd524106e4d71f59ab" src="https://github.com/user-attachments/assets/944366ce-cd56-4754-a469-fae2343c308a" />
+
 ## 项目简介
 
 本项目基于 **STM32F103C8T6** 微控制器，使用 **DHT11** 温湿度传感器采集环境数据，并通过 **0.96 寸 OLED 显示屏**（SSD1306，I2C 接口）实时显示温湿度值。项目中利用 **DWT（Data Watchpoint and Trace）** 实现了微秒级精确延时，保证了单总线通信的时序可靠性。同时支持串口打印调试信息，便于性能分析与问题排查。
@@ -13,8 +15,6 @@
 | OLED 显示屏 | 0.96 寸，SSD1306，I2C | SCL → PB6，SDA → PB7 |
 | 调试/烧录 | DAP-Link / ST-Link | SWD 接口 |
 | USB 转 TTL | - | PA9(TX), PA10(RX) |
-
-> **注意**：DHT11 数据线需外接 4.7kΩ 上拉电阻至 3.3V（模块已内置则可省略）。
 
 ## 功能说明
 
@@ -95,7 +95,7 @@ OLED_ShowString_F8X16(1, 2, (uint8_t*)"Hello");
 | 问题 | 可能原因 | 解决方法 |
 |------|----------|----------|
 | OLED 全屏点亮正常，但显示汉字乱码 | 字模数据格式不一致 | 确保 PCtoLCD2002 设置为阴码、逐列式、高位在前 |
-| DHT11 一直返回 HAL_ERROR | 缺少上拉电阻 / 延时不精确 | 外接 4.7kΩ 上拉电阻；确认 DWT 初始化成功 |
+| DHT11 一直返回 HAL_ERROR | 延时不精确 | 确认 DWT 初始化成功 |
 | 串口无输出 | 未勾选 MicroLIB 或串口初始化错误 | 勾选 MicroLIB，检查 MX_USART1_UART_Init() 是否调用 |
 | 显示位置偏移 | `OLED_SetPos` 中的列地址计算错误 | 检查高位字节是否正确右移 4 位 |
 
