@@ -1,6 +1,7 @@
 # 基于 STM32 的环境监测报警系统
 
-<img width="1440" height="1920" alt="c57b17eac51fc2fd524106e4d71f59ab" src="https://github.com/user-attachments/assets/944366ce-cd56-4754-a469-fae2343c308a" />
+<img width="1440" height="1920" alt="image" src="https://github.com/user-attachments/assets/8de066c3-1b00-4338-a8e2-425d4ed50393" />
+
 
 ## 项目简介
 
