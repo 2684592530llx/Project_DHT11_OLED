@@ -14,15 +14,22 @@ void Light_LEDR(void)
 	}
 }
 
-uint16_t Get_ADC_Average(uint8_t times) {
+float Get_LightPercent(void)
+{
     uint32_t sum = 0;
-    for (uint8_t i = 0; i < times; i++) {
+    for (int i = 0; i < 10; i++)
+    {
         HAL_ADC_Start(&hadc1);
-        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+        if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
+        {
             sum += HAL_ADC_GetValue(&hadc1);
         }
+        HAL_Delay(5);
     }
-    return (uint16_t)(sum / times);
+	uint16_t adc_avg = sum / 10;
+    float percent = (1.0f - (float)adc_avg / 4095.0f) * 100.0f;//将 ADC 值取反
+    return percent;
 }
+
 
 

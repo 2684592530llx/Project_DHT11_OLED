@@ -4,6 +4,6 @@
 #include "main.h"
 
 void Light_LEDR(void);
-uint16_t Get_ADC_Average(uint8_t times);
+float Get_LightPercent(void);
 
 #endif

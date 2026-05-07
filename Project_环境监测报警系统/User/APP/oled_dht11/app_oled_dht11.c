@@ -33,11 +33,10 @@ void DHT11_ReadAndShow(void)
 			sprintf(humi_data , "%.2d.%.1d%%" , dht11_data.humi_int , dht11_data.humi_deci);
 			OLED_ShowString_F8X16(2 , 5 , (uint8_t *)(humi_data));
 			
-			uint16_t adc = Get_ADC_Average(10);
-			uint16_t voltage_mv = (uint16_t)((adc * 3300) / 4095);  // 毫伏
-			char light_data[8];
-			sprintf(light_data, "%2d.%01dV", voltage_mv/1000, voltage_mv%1000);
-			OLED_ShowString_F8X16(3, 9, (uint8_t*)light_data);
+char light_data[8];
+uint8_t light_int = (uint8_t)(Get_LightPercent());   // 取整数部分
+sprintf(light_data, "%d%%", light_int);
+OLED_ShowString_F8X16(3, 9, (uint8_t*)light_data);
 			
 			DWT_DelayS(1);
 			OLED_Clear();
