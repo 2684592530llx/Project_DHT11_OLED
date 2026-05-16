@@ -34,7 +34,7 @@ void DWT_DelayMs(uint32_t time)//实现Ms级延时
 	}
 }
 
-void DWT_DelayS(uint32_t time)//实现Ms级延时
+void DWT_DelayS(uint32_t time)//实现SS级延时
 {
 	for(int i = 0 ; i < time ; i++)
 	{

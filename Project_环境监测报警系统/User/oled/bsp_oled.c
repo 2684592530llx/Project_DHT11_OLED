@@ -15,6 +15,7 @@ ErrorStatus OLED_CheckDevice(uint8_t slave_addr)//检测OLED设备是否存在,s
 
 ErrorStatus OLED_WriteByte(uint8_t cmd , uint8_t byte) //单字符传递，cmd：写入模式（传数据 | 传命令），byte：写入（具体数据 | 命令字节）
 {
+	//主要是用来初始化OLED的
 	uint8_t buf[2] = {cmd,byte};
 	if(HAL_I2C_Master_Transmit(&hi2c1 , (OLED_SALVE_ADDER << 1) , buf , 2 , IIC_TIMEOUT) == HAL_OK)
 	{
@@ -30,7 +31,7 @@ ErrorStatus OLED_WriteBuffer(uint8_t cmd , uint8_t *buffer , uint32_t num)//多�
 	{
 		printf("数据过长\n");
 	}
-	buf[0] = cmd;//第一个字节为标识
+	buf[0] = cmd;//第一个字节为标识(控制字节)，判断是写数据还是写命令
 	
 	memcpy(&buf[1],buffer,num);//将实际数据复制到buf数组
 

@@ -14,7 +14,9 @@ typedef struct
    uint8_t temp_int;        // 温度整数部分
    uint8_t temp_deci;       // 温度小数部分
    uint8_t check_sum;       // 校验和                              
-} DHT11_DATA_TYPEDEF;
+}DHT11_DATA_TYPEDEF;
+
+extern DHT11_DATA_TYPEDEF dht11_data;
 
 void DHT11_GPIO_Init(void);
 void DHT11_SetGPIOMode(uint32_t mode , uint32_t pull);

@@ -1,21 +1,3 @@
-/**
-  ******************************************************************************
-  * @file       usart_com.c
-  * @author     embedfire
-  * @version     V1.0
-  * @date        2025
-  * @brief   		初始化串口并重定向printf函数到usart端口
-  ******************************************************************************
-  * @attention
-  *
-  * 实验平台  ：野火 STM32F103C8T6-STM32开发板 
-  * 论坛      ：http://www.firebbs.cn
-  * 官网      ：https://embedfire.com/
-  * 淘宝      ：https://yehuosm.tmall.com/
-  *
-  ******************************************************************************
-  */
-	
 #include "usart/bsp_usart.h"
 
 UART_HandleTypeDef huart1;            // 调试串口 USART1 句柄

@@ -21,6 +21,14 @@
 #ifndef __STM32F1xx_HAL_CONF_H
 #define __STM32F1xx_HAL_CONF_H
 
+#ifndef ATOMIC_SET_BIT
+#define ATOMIC_SET_BIT(REG, BIT)   ((REG) |= (BIT))
+#endif
+
+#ifndef ATOMIC_CLEAR_BIT
+#define ATOMIC_CLEAR_BIT(REG, BIT) ((REG) &= ~(BIT))
+#endif
+
 #ifdef __cplusplus
  extern "C" {
 #endif

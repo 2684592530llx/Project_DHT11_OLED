@@ -8,6 +8,8 @@
 #include "oled_dht11/app_oled_dht11.h"
 #include "light/bsp_light.h"
 #include "light/bsp_adc.h"
+#include "esp8266/bsp_esp8266.h"
+#include "mqtt/bsp_mqtt.h"
 
 void SystemClock_Config(void);
 
@@ -19,7 +21,7 @@ int main(void)
 
 	SystemClock_Config();   // 配置系统时钟，设置为 72MHz
 	
-	MX_USART1_UART_Init();	// 初始化串口，用于打印调试信息
+	Debug_UART_Init();// 初始化串口，用于打印调试信息
 	
 	DWT_Init();							// 启动 DWT 计数器，用于精确测量程序运行时间
 
@@ -33,11 +35,14 @@ int main(void)
 	
 	HAL_ADCEx_Calibration_Start(&hadc1);//校准ADC
 	
+	ESP8266_Task();				// 执行 ESP8266 初始化及配置任务
+	
+	MQTT_Task();				//	连接MQTT服务器，订阅 回复 和 设置 主题
+	
   while (1)
   {
 	  Light_LEDR();
-	  DHT11_ReadAndShow();
-	  
+	  DHT11_ReadAndShow();		
   }
 }
 

@@ -4,17 +4,17 @@
 
 void Light_LEDR(void)
 {
-	if(HAL_GPIO_ReadPin(GPIOA ,Light_Do_PA11_Pin) == GPIO_PIN_RESET)	//光照强度足够的情况
+	if(HAL_GPIO_ReadPin(GPIOA ,Light_Do_PA11_Pin) == GPIO_PIN_RESET)	
 	{
-		HAL_GPIO_WritePin(Light_LED_R_PB5_GPIO_Port, Light_LED_R_PB5_Pin, GPIO_PIN_SET);	//LED灯灭
+		HAL_GPIO_WritePin(Light_LED_R_PB5_GPIO_Port, Light_LED_R_PB5_Pin, GPIO_PIN_SET);	//PA11涓轰綆鐢靛钩锛岄偅涔圥B5杈撳嚭楂樼數骞筹紝鐔勭伃LEDR
 	}
-	else if(HAL_GPIO_ReadPin(GPIOA ,Light_Do_PA11_Pin) == GPIO_PIN_SET)	//光照强度不够的情况
+	else if(HAL_GPIO_ReadPin(GPIOA ,Light_Do_PA11_Pin) == GPIO_PIN_SET)	
 	{
-		HAL_GPIO_WritePin(Light_LED_R_PB5_GPIO_Port, Light_LED_R_PB5_Pin, GPIO_PIN_RESET);	//LED灯亮
+		HAL_GPIO_WritePin(Light_LED_R_PB5_GPIO_Port, Light_LED_R_PB5_Pin, GPIO_PIN_RESET);	//PA11涓洪珮鐢靛钩锛岄偅涔圥B5杈撳嚭浣庣數骞筹紝鐐逛寒LEDR
 	}
 }
 
-float Get_LightPercent(void)
+uint8_t Get_LightPercent(void)
 {
     uint32_t sum = 0;
     for (int i = 0; i < 10; i++)
@@ -27,8 +27,8 @@ float Get_LightPercent(void)
         HAL_Delay(5);
     }
 	uint16_t adc_avg = sum / 10;
-    float percent = (1.0f - (float)adc_avg / 4095.0f) * 100.0f;//将 ADC 值取反
-    return percent;
+    float percent = (1.0f - (float)adc_avg / 4095.0f) * 100.0f;
+    return (uint8_t)percent;
 }
 
 

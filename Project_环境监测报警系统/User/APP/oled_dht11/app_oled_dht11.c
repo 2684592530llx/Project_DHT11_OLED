@@ -6,41 +6,60 @@
 #include "dwt/bsp_dwt.h"
 #include "gpio/bsp_gpio.h"
 #include "light/bsp_light.h"
+#include "esp8266/bsp_esp8266.h"
+#include "mqtt/bsp_mqtt.h"
 
-
-static DHT11_DATA_TYPEDEF dht11_data= {0};
+DHT11_DATA_TYPEDEF dht11_data= {0};
 
 void DHT11_ReadAndShow(void)
 {
 	if(DHT11_ReadData(&dht11_data) == HAL_OK)
 	{
-		float temperature = dht11_data.temp_int + dht11_data.temp_deci / 10.0f;//比较整数部分+小数是否达到阈值
-		//除了温度，还可以对湿度也进行阈值设置
-		if(temperature> HUMI_MAX)//自己设置一个HUMI_MAX温度的阈值，超过这个温度就报警
+		float temperature = dht11_data.temp_int + dht11_data.temp_deci / 10.0f;
+		
+		// 温度报警判断
+		if(temperature > HUMI_MAX)
 		{
-			Beep_ReadTemp();
+			Beep_ReadTemp();  // 蜂鸣器报警
 		}
 		else
 		{
-			HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_RESET);//将PA6置低电平,关闭蜂鸣器
-			Show_Chinese();
-
-			char temp_data[8];
-			sprintf(temp_data , "%.2d.%.1dC" , dht11_data.temp_int , dht11_data.temp_deci);
-			OLED_ShowString_F8X16(1 , 5 , (uint8_t *)(temp_data));
-			
-			char humi_data[8];
-			sprintf(humi_data , "%.2d.%.1d%%" , dht11_data.humi_int , dht11_data.humi_deci);
-			OLED_ShowString_F8X16(2 , 5 , (uint8_t *)(humi_data));
-			
-char light_data[8];
-uint8_t light_int = (uint8_t)(Get_LightPercent());   // 取整数部分
-sprintf(light_data, "%d%%", light_int);
-OLED_ShowString_F8X16(3, 9, (uint8_t*)light_data);
-			
-			DWT_DelayS(1);
-			OLED_Clear();
+			HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_RESET);  // 关闭蜂鸣器
 		}
+		
+		// OLED显示（无论是否报警都显示）
+		Show_Chinese();
+		
+		char temp_data[8];
+		sprintf(temp_data , "%.2d.%.1dC" , dht11_data.temp_int , dht11_data.temp_deci);
+		OLED_ShowString_F8X16(1 , 5 , (uint8_t *)(temp_data));
+		
+		char humi_data[8];
+		sprintf(humi_data , "%.2d.%.1d%%" , dht11_data.humi_int , dht11_data.humi_deci);
+		OLED_ShowString_F8X16(2 , 5 , (uint8_t *)(humi_data));
+		
+		char light_data[8];
+		uint8_t light_int = Get_LightPercent();   
+		sprintf(light_data, "%d%%", light_int);
+		OLED_ShowString_F8X16(3, 9, (uint8_t*)light_data);
+		
+		// MQTT上传数据（无论是否报警都上传）
+		float temp = dht11_data.temp_int + dht11_data.temp_deci / 10.0f;
+		float humi = dht11_data.humi_int + dht11_data.humi_deci / 10.0f;
+		int   light = light_int;
+		MQTT_Upload_ConstData(temp, humi, light);
+		
+		// 读取并上传设备状态
+		uint8_t beep_state = HAL_GPIO_ReadPin(Beep_PA6_GPIO_Port, Beep_PA6_Pin);
+		uint8_t beep_on = (beep_state == GPIO_PIN_SET) ? 1 : 0;
+		
+		uint8_t ledr_state = HAL_GPIO_ReadPin(Light_LED_R_PB5_GPIO_Port, Light_LED_R_PB5_Pin);
+		uint8_t ledr_on = (ledr_state == GPIO_PIN_RESET) ? 1 : 0;
+		
+		MQTT_Upload_StatusData(beep_on, ledr_on);
+		
+		DWT_DelayS(5);
+		OLED_Clear();
 	}
 	else
 	{
@@ -49,6 +68,97 @@ OLED_ShowString_F8X16(3, 9, (uint8_t*)light_data);
 	}
 }
 
+/**
+  * @brief  ESP8266 任务函数
+  * @note   完成 ESP8266 上电初始化、模式设置、Wi-Fi 连接、TCP 连接及透传模式配置
+  * @retval 无
+  */
+void ESP8266_Task(void)
+{
+    ESP8266_Init();                                    // 初始化 ESP8266 模块及相关外设
+	OLED_ShowString_F8X16(2 , 2 , (uint8_t *)"ESP8266_Init");
+	DWT_DelayS(1);
+	OLED_Clear();
+    printf(">>> ESP8266 已初始化\r\n");
+
+    // 软件复位 ESP8266，并等待 ready
+    printf(">>> ESP8266 软件复位中...\r\n");
+    if(ESP8266_ResetWait())       // 软件复位并等待 ready
+	{
+		printf(">>> ESP8266 软件复位完成，ready 已收到\r\n");
+		OLED_ShowString_F8X16(1 , 5 , (uint8_t *)"AT+RST");
+		OLED_ShowString_F8X16(2 , 7 , (uint8_t *)"OK!");
+	    DWT_DelayS(1);
+	    OLED_Clear();
+	}
+    else
+    {
+        printf(">>> ESP8266 复位超时!\r\n");
+        return;                              // 复位失败则退出任务
+    }
+	
+    // 测试 ESP8266 模块是否可用
+    if(ESP8266_Test())
+	{
+		printf(">>> ESP8266 模块测试通过\r\n");
+		OLED_ShowString_F8X16(1 , 7 , (uint8_t *)"AT");
+		OLED_ShowString_F8X16(2 , 7 , (uint8_t *)"OK!");
+		DWT_DelayS(1);
+	    OLED_Clear();
+	}
+    else
+    {
+        printf(">>> ESP8266 模块不可用!\r\n");
+        return;                                       // 模块不可用则退出任务
+    }
+
+    // 设置工作模式为 STA
+    if(ESP8266_SetMode(STA))
+	{
+		printf(">>> ESP8266 已设置为 STA 模式\r\n");
+		OLED_ShowString_F8X16(1 , 5 , (uint8_t *)"AT+CWMODE");
+		OLED_ShowString_F8X16(2 , 7 , (uint8_t *)"OK!");
+		DWT_DelayS(1);
+		OLED_Clear();
+	}
+    else
+    {
+        printf(">>> 设置工作模式失败!\r\n");
+        return;                                       // 设置失败则退出任务
+    }
+	
+    // 连接指定 Wi-Fi
+    if(!ESP8266_ConnectWiFi(ApSsid, ApPwd))
+	{
+		printf(">>> Wi-Fi 已连接\r\n");
+		OLED_ShowString_F8X16(1 , 5 , (uint8_t *)"AT+CWJAP");
+		OLED_ShowString_F8X16(2 , 7 , (uint8_t *)"OK!");
+		DWT_DelayS(1);
+		OLED_Clear();
+	}     
+    else
+	{
+        printf(">>> Wi-Fi 连接失败! \r\n");
+		return; 
+	}
+
+}
+
+void MQTT_Task(void)
+{
+	MQTT_SetUserConfig();
+	HAL_Delay(200);
+	
+	MQTT_Connect();
+	HAL_Delay(200);
+
+	MQTT_ReplySubscribe();
+	HAL_Delay(200);
+
+	MQTT_SetSubscribe();
+	HAL_Delay(200);
+	
+}
 
 void Show_Chinese(void)
 {

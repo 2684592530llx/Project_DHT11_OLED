@@ -146,7 +146,56 @@ void DHT11_ReadAndShow(void)
 	}
 }
 
+通过ESP8266将传感器数据上云
 
+1. 首先用串口测试ESP8266是否拥有MQTT模块功能
+   通过串口发送 AT+MQTTUSERCFG=?，看返回值判断ESP8266是否有MQTT模块。
+   若返回ERROR，则需要烧录支持MQTT的AT固件。
+
+2. 创建 bsp_esp8266.c 和 bsp_esp8266.h 文件
+   - 配置ESP8266的GPIO引脚（IO和RST）
+   - 使用UART3（DMA+空闲中断）接收ESP8266返回的数据
+   - 使用UART1（空闲中断）接收上位机数据并转发给ESP8266
+   - 实现ESP8266_Cmd()函数：发送AT指令前停止DMA、清空缓冲区、重新启动DMA接收，再发送指令
+   - 实现关键函数：
+     * ESP8266_Test() —— 测试模块是否响应AT
+     * ESP8266_ResetWait() —— 软件复位并等待ready
+     * ESP8266_SetMode() —— 设置STA/AP模式
+     * ESP8266_ConnectWiFi() —— 连接WiFi，支持错误码解析
+
+3. 创建 bsp_mqtt.c 和 bsp_mqtt.h 文件
+   按照以下顺序连接OneNET平台：
+
+   步骤1：配置用户参数
+   AT+MQTTUSERCFG=0,1,"设备名称","产品ID","token",0,0,""
+   - 设备名称、产品ID、token需从OneNET平台获取
+   - token需用官方工具生成，包含版本、资源、过期时间、签名方法
+
+   步骤2：连接MQTT服务器
+   AT+MQTTCONN=0,"mqtts.heclouds.com",1883,1
+   - 端口1883为非SSL，若使用SSL需改为8883
+   - 超时时间需设置足够长（建议10秒以上）
+
+   步骤3：订阅主题
+   AT+MQTTSUB=0,"$sys/产品ID/设备名称/thing/property/post/reply",0
+   AT+MQTTSUB=0,"$sys/产品ID/设备名称/thing/property/set",0
+
+   步骤4：发布传感器数据
+   AT+MQTTPUB=0,"$sys/产品ID/设备名称/thing/property/post","JSON数据",0,0
+
+4. 数据格式注意事项
+   - JSON中的逗号需转义为 \,（OneNET物模型要求）
+   - JSON中的双引号需转义为 \"
+   - 布尔值用true/false字符串，不要用0/1
+   - 温度/湿度的小数部分需除以10.0（DHT11数据格式）
+   - 字符串过长时建议用static或const存入Flash，防止栈溢出
+
+5. 常见问题
+   - 指令末尾缺少\r\n → ESP8266不识别
+   - 缓冲区太小（如128字节）→ 指令被截断
+   - 宏定义中双引号未转义 → 编译后字符串异常
+   - 蜂鸣器报警时不上传数据 → 需将上传逻辑移到if判断外面
+   - 温度显示不准确 → temp_deci需除以10.0，不能直接相加
 
 
 

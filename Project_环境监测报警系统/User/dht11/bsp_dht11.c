@@ -38,8 +38,9 @@ uint8_t DHT11_ReadByte(void)
 	
 	for(uint8_t i = 0 ; i < 8 ; i++)
 	{
-		 //前面低电平我们不需要判断，跳过这部分低电平
+		 //每一位数都以50us低电平开始，前面低电平我们不需要判断，跳过这部分低电平
 		while(HAL_GPIO_ReadPin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin) == RESET);
+		
 	    DWT_DelayUs(40);//等待40us后，看是高电平还是低电平
 		
 		if(HAL_GPIO_ReadPin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin) == SET)
@@ -56,25 +57,34 @@ HAL_StatusTypeDef DHT11_ReadData(DHT11_DATA_TYPEDEF *data)
 {
 	uint8_t retry = 0;
 	DHT11_SetGPIOMode(GPIO_MODE_OUTPUT_PP , GPIO_NOPULL);//推挽输出
-	HAL_GPIO_WritePin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin , GPIO_PIN_RESET);//输出状态拉低数据线
+	
+	//主机发送起始信号，输出状态拉低数据线至少18ms
+	HAL_GPIO_WritePin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin , GPIO_PIN_RESET);
 	DWT_DelayMs(20);
+	
+	//然后拉高30us，释放总线
 	HAL_GPIO_WritePin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin , GPIO_PIN_SET);
 	DWT_DelayUs(30);
 	
 	DHT11_SetGPIOMode(GPIO_MODE_AF_INPUT , GPIO_PULLUP);// 设置引脚为输入，等待DHT11响应信号
 	
+	//DHT11检测到起始信号后，先拉低80us
 	retry = 0;
 		while(HAL_GPIO_ReadPin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin) == RESET)
 	{
 		if(++retry > 100) return HAL_ERROR;
 		DWT_DelayUs(1);
 	}
+	
+	//再拉高80us，表示准备好发送数据
 	retry = 0;
 		while(HAL_GPIO_ReadPin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin) == SET)
 	{
 		if(++retry > 100) return HAL_ERROR;
 		DWT_DelayUs(1);
 	}
+	
+	//再次等待DHT11拉低，数据开始
 	retry = 0;
 		while(HAL_GPIO_ReadPin(DHT11_DATA_GPIO_Port , DHT11_DATA_Pin) == RESET)
 	{

@@ -4,6 +4,6 @@
 #include "main.h"
 
 void Light_LEDR(void);
-float Get_LightPercent(void);
+extern uint8_t Get_LightPercent(void);
 
 #endif
