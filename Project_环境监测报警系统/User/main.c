@@ -41,7 +41,15 @@ int main(void)
 	
   while (1)
   {
-	  Light_LEDR();
+	  /* 处理 OneNET 命令下行：解析 ESP8266 接收到的 property/set 消息
+	   * 自动模式下，蜂鸣器由温度控制、LED 由光照控制
+	   * 收到命令后进入手动模式，MCU 复位后恢复自动模式 */
+	  MQTT_ProcessCommand();
+
+	  /* LEDR 控制：手动模式优先，否则自动根据光照控制 */
+	  LEDR_Control();
+
+	  /* DHT11 读取 + OLED 显示 + 蜂鸣器控制 + MQTT 上传 */
 	  DHT11_ReadAndShow();		
   }
 }

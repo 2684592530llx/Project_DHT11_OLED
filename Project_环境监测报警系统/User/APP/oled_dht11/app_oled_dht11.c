@@ -17,14 +17,30 @@ void DHT11_ReadAndShow(void)
 	{
 		float temperature = dht11_data.temp_int + dht11_data.temp_deci / 10.0f;
 		
-		// 温度报警判断
-		if(temperature > HUMI_MAX)
+		/* 蜂鸣器控制：手动模式优先，否则自动根据温度判断 */
+		if(mqtt_manual_beep)
 		{
-			Beep_ReadTemp();  // 蜂鸣器报警
+			/* 手动模式：按照 OneNET 命令下行控制蜂鸣器，跳过温度判断 */
+			if(mqtt_beep_state)
+			{
+				HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_SET);
+			}
+			else
+			{
+				HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_RESET);
+			}
 		}
 		else
 		{
-			HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_RESET);  // 关闭蜂鸣器
+			/* 自动模式：根据温度阈值自动控制蜂鸣器 */
+			if(temperature > HUMI_MAX)
+			{
+				Beep_ReadTemp();  // 蜂鸣器报警
+			}
+			else
+			{
+				HAL_GPIO_WritePin(Beep_PA6_GPIO_Port, Beep_PA6_Pin, GPIO_PIN_RESET);  // 关闭蜂鸣器
+			}
 		}
 		
 		// OLED显示（无论是否报警都显示）
@@ -58,7 +74,12 @@ void DHT11_ReadAndShow(void)
 		
 		MQTT_Upload_StatusData(beep_on, ledr_on);
 		
-		DWT_DelayS(5);
+		/* 把长延时拆开，保证等待期间也能及时处理平台下行命令 */
+		for(uint8_t i = 0; i < 40; i++)
+		{
+			MQTT_ProcessCommand();
+			HAL_Delay(100);
+		}
 		OLED_Clear();
 	}
 	else
@@ -146,18 +167,15 @@ void ESP8266_Task(void)
 
 void MQTT_Task(void)
 {
+	/* EMQX Cloud：三步连接 — 配置用户 → 连接 Broker → 订阅命令主题 */
 	MQTT_SetUserConfig();
 	HAL_Delay(200);
-	
+
 	MQTT_Connect();
 	HAL_Delay(200);
 
-	MQTT_ReplySubscribe();
+	MQTT_CommandSubscribe();
 	HAL_Delay(200);
-
-	MQTT_SetSubscribe();
-	HAL_Delay(200);
-	
 }
 
 void Show_Chinese(void)
@@ -185,4 +203,25 @@ void Show_Chinese(void)
 	OLED_ShowChinese_F16X16(3 , 2 , 13);
 	OLED_ShowChinese_F16X16(3 , 3 , 14);//光照强度
 	OLED_ShowString_F8X16(3, 8, (uint8_t *)":");  // 显示冒号“:”
+}
+
+/**
+  * @brief  LEDR 控制（手动/自动模式切换）
+  * @note   手动模式下，根据 OneNET 命令下行设置 LED 状态
+  *         自动模式下，调用 Light_LEDR() 根据光照自动控制
+  *         PB5 引脚低电平点亮, 高电平熄灭
+  * @retval 无
+  */
+void LEDR_Control(void)
+{
+	if(mqtt_manual_ledr)
+	{
+		/* 手动模式：按照 OneNET 命令下行控制 LED */
+		/* mqtt_ledr_state 已在 MQTT_ProcessCommand() 中用于设置 GPIO，无需重复操作 */
+	}
+	else
+	{
+		/* 自动模式：根据光照强度自动控制 LED */
+		Light_LEDR();
+	}
 }

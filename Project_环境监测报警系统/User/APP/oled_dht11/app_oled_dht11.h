@@ -9,6 +9,7 @@ void Beep_ReadTemp(void);
 void Show_Chinese(void);
 void ESP8266_Task(void);
 void MQTT_Task(void);
+void LEDR_Control(void);
 
 #define      ApSsid        "siyuan"         		//要连接的热点的名称
 #define      ApPwd         "88888888"           	//要连接的热点的密钥
